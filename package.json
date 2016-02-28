@@ -1,0 +1,20 @@
+{
+  "name": "jQuick",
+  "author": "enjolras1024",
+  "main": "dist/jQuick-full.js",
+  "license": "MIT",
+  "version": "0.0.1",
+  "description": "A JavaScript library with limited and quick DOM APIs for modern browsers.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jQuick"
+  ],
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^1.5.1"
+  }
+}
