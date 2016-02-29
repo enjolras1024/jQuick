@@ -46,9 +46,8 @@
     innerHTML: function(buffer, value) {
       if (typeof value === 'string') {
         var child, children = buffer.pool.children = [], nodes = $.parse(value);
-        console.log(nodes);
         for (var i = 0, n = nodes.length; i < n; ++i) {
-          child = nodes.item(i);
+          child = nodes[i];
           child.futureParent = buffer.element;
           children.push(child);
         }
@@ -118,13 +117,26 @@
      * @returns {self}
      */
     update: function(type, key, value) {
-      if ( key in ContentUtil &&  type === 'props' ) {
-        var render = ContentUtil[key];
-        render(this, value);
+      var t = typeof key;
+      if (t === 'string') {
+        if ( key in ContentUtil &&  type === 'props' ) {
+          var render = ContentUtil[key];
+          render(this, value);
+        } else {
+          var part = this.pool[type];
+          part[key] = value;
+        }
+      } else if (t === 'object') {
+        var options = key;
+        for (key in options) {
+          if (options.hasOwnProperty(key)) {
+            this.update(type, key, options[key]);
+          }
+        }
       } else {
-        var part = this.pool[type];
-        part[key] = value;
+        throw new TypeError('key should be string or object');
       }
+
 
       return this;
     },
