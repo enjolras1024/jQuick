@@ -69,7 +69,7 @@
       instance._actions = actions;
 
       if (!('listener' in action)) {
-        if (element && ('on' + type) in element) {//@todo No problem?
+        if (this.can(type)) {//@todo No problem?
           action.listener = function(domEvent) {
             instance.trigger(domEvent);
           };

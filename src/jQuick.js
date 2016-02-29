@@ -5,12 +5,11 @@
   'use strict';
 
   /**
-   * A JavaScript library with limited and quick DOM APIs for modern browsers.
-   * Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
-   *
-   * @todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
+   * @overview jQuick - A JavaScript library with limited and quick DOM APIs for modern browsers.
+   *           Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
    *
    * @copyright Copyright 2016 Enjolras. All rights reserved.
+   * @license   Licensed under MIT license
    * @version 0.0.1
    * 
    * @class
@@ -22,7 +21,7 @@
     if (this === undefined ||  this === window) {// <=> !(this instanceof jQuick)
       return $.select( element, options );
     }
-
+    //@todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
     this.element = null; //@todo How about this.node
     //this._events = {};
     this.length = 0;
@@ -34,7 +33,7 @@
       if (expr[0] === '<'
         && expr[expr.length - 1] === '>'
         && expr.length >= 3) {
-        element = $.parse(expr).item(0);
+        element = $.parse(expr)[0];
       } else {
         element = $doc.query(expr);
       }
@@ -106,7 +105,7 @@
    *
    * @static
    * @param {string} html
-   * @returns {NodeList}
+   * @returns {Array}
    */
   $.parse = function(html) {
     var idx = html.indexOf(' '), name = html.slice(1, idx);
@@ -114,8 +113,15 @@
     if (!(name in containers)) { name = '*'; }
     var container = containers[name];
     container.innerHTML = html;
+
+    var children = [], nodes = container.childNodes, n = nodes.length, i;
+    
+    for (i = 0; i < n; ++i) {
+      children.push(nodes[i]);
+    }
+    //container.textContent ='';
     //return container.firstChild;
-    return container.childNodes;
+    return children;
   };
 
   /**
