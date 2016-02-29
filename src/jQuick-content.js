@@ -94,18 +94,31 @@
     return obj;
   }
 
+  function _check(node) {
+    if (typeof node === 'string') {
+      node = $.parse(node);
+    }
+    if (Array.isArray(node)/* || node instanceof  NodeList*/) { //@todo NodeList
+      var nodes = [].slice.call(node, 0), n = nodes.length, i;
+      node = $.fragment().element;
+      for (i = 0; i < n; ++i) {
+        node.appendChild($.extract(nodes[i]));
+      }
+      //nodes.splice(0);
+    }
+    return node;
+  }
+
   /**
    * Insert child before node in this element.
    *
    * @alias prepend()
-   * @param {Element|DocumentFragment|jQuick|string} node
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
+   * @param {Element|jQuick} child
    * @returns {self}
    */
   $pt.insert = function(node, child) {
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);//@todo How about NodeList or Array?
-    }
+    node = _check(node);
     return _adjust(this, node, child, 'insertBefore');
     /*child = $.extract( child ); node = $.extract( node );
      var element = this.element;
@@ -118,13 +131,11 @@
   /**
    * Append child to this element.
    *
-   * @param {Element|DocumentFragment|jQuick|string} node
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
    * @returns {self}
    */
-  $pt.append = function(node) {//@todo How about NodeList or Array?
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);
-    }
+  $pt.append = function(node) {
+    node = _check(node);
     return _adjust(this, node, undefined, 'appendChild');
     /*child = $.extract( child );
      var element = this.element;
@@ -138,7 +149,7 @@
    * Remove child from this element.
    *
    * @todo .depart(child,true) will remove all event listeners of child.
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|jQuick} child
    * @returns {self}
    */
   $pt.depart = function(child) {
@@ -169,14 +180,12 @@
   /**
    * Replace child with node in this element.
    *
-   * @param {Element|DocumentFragment|jQuick|string} node
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
+   * @param {Element|jQuick} child
    * @returns {self}
    */
-  $pt.replace = function(node, child) {//@todo How about NodeList or Array?
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);
-    }
+  $pt.replace = function(node, child) {
+    node = _check(node);
     return _adjust(this, node, child, 'replaceChild');
     /*child = $.extract( child ); node = $.extract( node );
      var element = this.element;
@@ -190,23 +199,23 @@
    * Replace this element with node in its parent.
    *
    * @todo Not nice.
-   * @param {Element|DocumentFragment|jQuick|string} node
+   * @param {Element|DocumentFragment|jQuick|Array|string} node
    * @returns {self}
    */
-  $pt.replaceWith = function(node) {
-    var element = this.element,
-      parent = element ? element.parentNode : null;
-    if (parent) {
-      (new $(parent)).replace(element, node);
-    }
-    /*var parent = element ? element.parentNode : null;
-     if ( parent ) {
-     if ( typeof node === 'string' ) {
-     node = $.parse( node ).item(0);
-     }
-     parent.replaceChild( element, $.extract( node ) );
-     }*/
-    return this;
-  };
+//  $pt.replaceWith = function(node) {
+//    var element = this.element,
+//      parent = element ? element.parentNode : null;
+//    if (parent) {
+//      (new $(parent)).replace(node, element);
+//    }
+//    /*var parent = element ? element.parentNode : null;
+//     if ( parent ) {
+//     if ( typeof node === 'string' ) {
+//     node = $.parse( node )[0];
+//     }
+//     parent.replaceChild( element, $.extract( node ) );
+//     }*/
+//    return this;
+//  };
 
 })(window);
