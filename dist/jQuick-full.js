@@ -5,12 +5,11 @@
   'use strict';
 
   /**
-   * A JavaScript library with limited and quick DOM APIs for modern browsers.
-   * Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
-   *
-   * @todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
+   * @overview jQuick - A JavaScript library with limited and quick DOM APIs for modern browsers.
+   *           Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
    *
    * @copyright Copyright 2016 Enjolras. All rights reserved.
+   * @license   Licensed under MIT license
    * @version 0.0.1
    * 
    * @class
@@ -22,7 +21,7 @@
     if (this === undefined ||  this === window) {// <=> !(this instanceof jQuick)
       return $.select( element, options );
     }
-
+    //@todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
     this.element = null; //@todo How about this.node
     //this._events = {};
     this.length = 0;
@@ -34,7 +33,7 @@
       if (expr[0] === '<'
         && expr[expr.length - 1] === '>'
         && expr.length >= 3) {
-        element = $.parse(expr).item(0);
+        element = $.parse(expr)[0];
       } else {
         element = $doc.query(expr);
       }
@@ -106,7 +105,7 @@
    *
    * @static
    * @param {string} html
-   * @returns {NodeList}
+   * @returns {Array}
    */
   $.parse = function(html) {
     var idx = html.indexOf(' '), name = html.slice(1, idx);
@@ -114,8 +113,15 @@
     if (!(name in containers)) { name = '*'; }
     var container = containers[name];
     container.innerHTML = html;
+
+    var children = [], nodes = container.childNodes, n = nodes.length, i;
+    
+    for (i = 0; i < n; ++i) {
+      children.push(nodes[i]);
+    }
+    //container.textContent ='';
     //return container.firstChild;
-    return container.childNodes;
+    return children;
   };
 
   /**
@@ -308,7 +314,7 @@
 })(window);
 
 //############################################################
-// src/jQuick-getter.js
+// src/jQuick-access.js
 //############################################################
 (function(window) {
   'use strict';
@@ -320,187 +326,159 @@
   var $pt = $.prototype;
 
   //############################################################
-  // Get child or self
+  // access module - Update properties, attributes, value and style ...
   //############################################################
 
   /**
-   * Get the childNode at given position.
+   * Initialize or update the properties, etc., of this instance.
    *
-   * @todo Maybe unnecessary.
-   * @param {number} idx
-   * @returns {Node}
+   * @alias set()?, init()?
+   * @param {Object} options
+   * @returns {self}
    */
-//  $pt.node = function (idx) {
-//    var element = this.element;
-//    //return element ? element.children[ idx ] : null;
-//    return $.asParent(element) ? element.childNodes[idx] : null;
-//  };
-
-  /**
-   * Get the child at given position.
-   *
-   * @param {number} idx
-   * @returns {jQuick}
-   */
-  $pt.child = function (idx) {
-    var element = this.element,
-      child = $.asParent(element) ? element.childNodes[idx] : null;
-    return child ? new $(child) : null;
-  };
-
-  /**
-   * Get all the children or some by selector.
-   *
-   * @param {undefined|string} selector
-   * @returns {Array}
-   */
-  $pt.children = function(selector) {
-    var element = this.element;
-    if (!$.asParent(element)) { return null; }
-
-    var i, n, matches, anyway = selector === undefined,
-      elements = element.childNodes, children = [];
-
-    element = elements[0];
-
-    if (element) {
-      matches = element.matches || element.matchesSelector;
-    }
-    /**
-     * @todo How about nodeType !== 1, such as Text.
-     */
-    for (i = 0, n = elements.length; i < n; ++i) {
-      element = elements[i];
-      if (/*$.isElement(element) && */(anyway ||  matches.call(element, selector))) {
-        children.push(new $(element));
+  $pt.update = function(options) {
+    options = options || {};
+    var key, value, func;
+    for (key in options) {
+      if (!options.hasOwnProperty(key)) { continue; }
+      func = this[key];
+      value = options[key];
+      if (typeof func === "function") {
+        func.call(this, value);
+      } else {
+        this.attr(key, value);
       }
     }
-
-    return children;
+    return this;
   };
-
-  /**
-   * Clone this instance.
-   *
-   * @returns {self}
-   */
-  $pt.clone = function() {
-    var element = this.element;
-    return (element instanceof Node) ? new $(element.cloneNode(true)) : new $();
-  };
-
-  /**
-   * Query an element by selector.
-   *
-   * @todo How about getElementById and getElementByClassName.
-   * @param {string} selector
-   * @returns {Element}
-   */
-  $pt.query = function(selector) {
-    var element = this.element;
-    return $.asParent(element) ? element.querySelector(selector) : null;
-  };
-  /**
-   * Query all elements by selector.
-   *
-   * @param {string} selector
-   * @returns {Array}
-   */
-  $pt.queryAll = function(selector) {
-    var element = this.element;
-    return $.asParent(element) ? element.querySelectorAll(selector) : [];
-  };
-
-  /**
-   * Find the jQuick child.
-   *
-   * @alias select()
-   * @param {string}  selector
-   * @returns {self}
-   */
-  $pt.find = function(selector) {
-    return new $(this.query(selector));
-  };
-
-  /**
-   * Find all the jQuick children.
-   *
-   * @todo maybe unnecessary
-   * @param {string} selector
-   * @returns {Array}
-   */
-  $pt.findAll = function(selector) {
-    var i, n, children = [], elements = this.queryAll(selector);
-    for (i = 0, n = elements.length; i < n; ++i) {
-      children.push(new $(elements[i]));
-    }
-    return children;
-  };
-
-
-  //############################################################
-  // Get property, attribute, value and style ...
-  //############################################################
 
   var FIX_HTML = $.FIX.HTML;// {'for': 'htmlFor', 'class': 'className'};
 
   /**
-   * Get standard property.
+   * Get or set standard properties.
    *
-   * @param {string} key
-   * @returns {*}
+   * @param {Object|string} key
+   * @returns {jQuick|*}
    */
   $pt.prop = function(key) {
-    var element = this.element;
-    if (element && typeof key === 'string') {
+    var element = this.element, type = typeof key, value;
+    if (!element) {
+      return type === 'object' ? this : null;
+    }
+
+    if (type === 'object') {
+      var props = key;
+      for (key in props) {
+        if (!props.hasOwnProperty(key)) { continue; }
+        value = props[key];
+        if (key in FIX_HTML) { key = FIX_HTML[key]; }
+        element[key] = value;
+      }
+    } else if (type === 'string') {
       if (key in FIX_HTML) { key = FIX_HTML[key]; }
       return element[key];
+    } else {
+      throw new TypeError('key should be object or string');
     }
+
+    return this;
   };
 
   /**
-   * Get attribute.
+   * Get or set attributes. Maybe custom.
    *
-   * @param {string} key
-   * @returns {*}
+   * @param {Object|string} key
+   * @returns {jQuick|*}
    */
   $pt.attr = function(key) {
-    var element = this.element;
-    if (element) {
-      if (!element.attributes) {
-        return this.prop(key);
-      } else if (typeof key === 'string') {
-        return element.getAttribute(key);
-      }
+    var element = this.element, type = typeof key, value;
+    if (!element) {
+      return type === 'object' ? this : null;
     }
+
+    if (!element.attributes) {
+      return this.prop(key);
+    } else if (type === 'object') {
+      var options = key;
+      for (key in options) {
+        if (options.hasOwnProperty(key)) {
+          value = options[key];
+          if (value !== null) {
+            element.setAttribute(key, value);
+          } else {
+            element.removeAttribute(key);
+          }
+        }
+      }
+    } else if (type === 'string') {
+      return element.getAttribute(key);
+    } else {
+      throw new TypeError('key should be object or string');
+    }
+
+    return this;
+  };
+
+  /**
+   * Get or set value.
+   *
+   * @todo How about nodeValue, option, select
+   * @param {undefined|*} value
+   * @returns {*|jQuick}
+   */
+  $pt.val = function(value) {
+    var element = this.element;
+    if (element.nodeName === 'select') {}//todo
+    if (value === undefined) {
+      return element && element.value;// || element.nodeValue;
+    } else if (element) {
+      element.value = value;
+    }
+    return this;
   };
 
   var FIX_CSS = $.FIX.CSS;// { 'float': 'cssFloat' };
   /**
-   * Get style.
+   * Get or set style. Maybe computed.
    *
-   * @param {string} key
-   * @returns {*}
+   * @param {Object|string} key
+   * @returns {jQuick|*}
    */
   $pt.css = function(key) {
-    var element = this.element, style = $.isElement(element) ? element.style : null;
+    var element = this.element, type = typeof key, value,
+      style = $.isElement(element) ? element.style : null;
 
-    if (style && typeof key === 'string') {
+    if (!style) { return type === 'object' ? this : null; }//throw new Error( 'there is no style! ' ); }
+
+    if (type === 'object') {
+      var options = key;
+      for (key in options) {
+        if (options.hasOwnProperty(key)) {
+          value = options[key];
+          key = FIX_CSS[key] || $.toCamelCase(key);
+          if (value === '' || value === null) {
+            style.removeProperty(key);
+          } else {
+            style[key] = value;
+          }
+        }
+      }
+    } else if (type === 'string') {
       key = FIX_CSS[key] || $.toCamelCase(key);
       return style[key] || window.getComputedStyle(element)[key];
+    }  else {
+      throw new TypeError( 'key should be object or string' );
     }
+
+    return this;
   };
 
-  /**
-   * Get value.
-   *
-   * @todo How about nodeValue, option, select
-   * @returns {*}
-   */
-  $pt.val = function() {
+  $pt.focus = function() {//@todo
     var element = this.element;
-    //if (element.nodeName === 'select') {}//todo
-    return element && element.value;
+    if ($.isElement(element) || $.isWindow(element)) {
+      element.focus();
+    }
+    return this;
   };
 
 })(window);
@@ -553,9 +531,8 @@
     innerHTML: function(buffer, value) {
       if (typeof value === 'string') {
         var child, children = buffer.pool.children = [], nodes = $.parse(value);
-        console.log(nodes);
         for (var i = 0, n = nodes.length; i < n; ++i) {
-          child = nodes.item(i);
+          child = nodes[i];
           child.futureParent = buffer.element;
           children.push(child);
         }
@@ -625,13 +602,26 @@
      * @returns {self}
      */
     update: function(type, key, value) {
-      if ( key in ContentUtil &&  type === 'props' ) {
-        var render = ContentUtil[key];
-        render(this, value);
+      var t = typeof key;
+      if (t === 'string') {
+        if ( key in ContentUtil &&  type === 'props' ) {
+          var render = ContentUtil[key];
+          render(this, value);
+        } else {
+          var part = this.pool[type];
+          part[key] = value;
+        }
+      } else if (t === 'object') {
+        var options = key;
+        for (key in options) {
+          if (options.hasOwnProperty(key)) {
+            this.update(type, key, options[key]);
+          }
+        }
       } else {
-        var part = this.pool[type];
-        part[key] = value;
+        throw new TypeError('key should be string or object');
       }
+
 
       return this;
     },
@@ -1208,18 +1198,31 @@
     return obj;
   }
 
+  function _check(node) {
+    if (typeof node === 'string') {
+      node = $.parse(node);
+    }
+    if (Array.isArray(node)/* || node instanceof  NodeList*/) { //@todo NodeList
+      var nodes = [].slice.call(node, 0), n = nodes.length, i;
+      node = $.fragment().element;
+      for (i = 0; i < n; ++i) {
+        node.appendChild($.extract(nodes[i]));
+      }
+      //nodes.splice(0);
+    }
+    return node;
+  }
+
   /**
    * Insert child before node in this element.
    *
    * @alias prepend()
-   * @param {Element|DocumentFragment|jQuick|string} node
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
+   * @param {Element|jQuick} child
    * @returns {self}
    */
   $pt.insert = function(node, child) {
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);//@todo How about NodeList or Array?
-    }
+    node = _check(node);
     return _adjust(this, node, child, 'insertBefore');
     /*child = $.extract( child ); node = $.extract( node );
      var element = this.element;
@@ -1232,13 +1235,11 @@
   /**
    * Append child to this element.
    *
-   * @param {Element|DocumentFragment|jQuick|string} node
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
    * @returns {self}
    */
-  $pt.append = function(node) {//@todo How about NodeList or Array?
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);
-    }
+  $pt.append = function(node) {
+    node = _check(node);
     return _adjust(this, node, undefined, 'appendChild');
     /*child = $.extract( child );
      var element = this.element;
@@ -1252,7 +1253,7 @@
    * Remove child from this element.
    *
    * @todo .depart(child,true) will remove all event listeners of child.
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|jQuick} child
    * @returns {self}
    */
   $pt.depart = function(child) {
@@ -1283,14 +1284,12 @@
   /**
    * Replace child with node in this element.
    *
-   * @param {Element|DocumentFragment|jQuick|string} node
-   * @param {Element|DocumentFragment|jQuick} child
+   * @param {Element|Text|DocumentFragment|jQuick|Array|string} node
+   * @param {Element|jQuick} child
    * @returns {self}
    */
-  $pt.replace = function(node, child) {//@todo How about NodeList or Array?
-    if (typeof node === 'string') {
-      node = $.parse(node).item(0);
-    }
+  $pt.replace = function(node, child) {
+    node = _check(node);
     return _adjust(this, node, child, 'replaceChild');
     /*child = $.extract( child ); node = $.extract( node );
      var element = this.element;
@@ -1304,194 +1303,24 @@
    * Replace this element with node in its parent.
    *
    * @todo Not nice.
-   * @param {Element|DocumentFragment|jQuick|string} node
+   * @param {Element|DocumentFragment|jQuick|Array|string} node
    * @returns {self}
    */
-  $pt.replaceWith = function(node) {
-    var element = this.element,
-      parent = element ? element.parentNode : null;
-    if (parent) {
-      (new $(parent)).replace(element, node);
-    }
-    /*var parent = element ? element.parentNode : null;
-     if ( parent ) {
-     if ( typeof node === 'string' ) {
-     node = $.parse( node ).item(0);
-     }
-     parent.replaceChild( element, $.extract( node ) );
-     }*/
-    return this;
-  };
-
-})(window);
-
-//############################################################
-// src/jQuick-access.js
-//############################################################
-(function(window) {
-  'use strict';
-
-  var $ = window.jQuick;
-
-  if (!$) { return; }
-
-  var $pt = $.prototype;
-
-  //############################################################
-  // access module - Update properties, attributes, value and style ...
-  //############################################################
-
-  /**
-   * Initialize or update the properties, etc., of this instance.
-   *
-   * @alias set()?, init()?
-   * @param {Object} options
-   * @returns {self}
-   */
-  $pt.update = function(options) {
-    options = options || {};
-    var key, value, func;
-    for (key in options) {
-      if (!options.hasOwnProperty(key)) { continue; }
-      func = this[key];
-      value = options[key];
-      if (typeof func === "function") {
-        func.call(this, value);
-      } else {
-        this.attr(key, value);
-      }
-    }
-    return this;
-  };
-
-  var FIX_HTML = $.FIX.HTML;// {'for': 'htmlFor', 'class': 'className'};
-
-  /**
-   * Get or set standard properties.
-   *
-   * @param {Object|string} key
-   * @returns {jQuick|*}
-   */
-  $pt.prop = function(key) {
-    var element = this.element, type = typeof key, value;
-    if (!element) {
-      return type === 'object' ? this : null;
-    }
-
-    if (type === 'object') {
-      var props = key;
-      for (key in props) {
-        if (!props.hasOwnProperty(key)) { continue; }
-        value = props[key];
-        if (key in FIX_HTML) { key = FIX_HTML[key]; }
-        element[key] = value;
-      }
-    } else if (type === 'string') {
-      if (key in FIX_HTML) { key = FIX_HTML[key]; }
-      return element[key];
-    } else {
-      throw new TypeError('key should be object or string');
-    }
-
-    return this;
-  };
-
-  /**
-   * Get or set attributes. Maybe custom.
-   *
-   * @param {Object|string} key
-   * @returns {jQuick|*}
-   */
-  $pt.attr = function(key) {
-    var element = this.element, type = typeof key, value;
-    if (!element) {
-      return type === 'object' ? this : null;
-    }
-
-    if (!element.attributes) {
-      return this.prop(key);
-    } else if (type === 'object') {
-      var options = key;
-      for (key in options) {
-        if (options.hasOwnProperty(key)) {
-          value = options[key];
-          if (value !== null) {
-            element.setAttribute(key, value);
-          } else {
-            element.removeAttribute(key);
-          }
-        }
-      }
-    } else if (type === 'string') {
-      return element.getAttribute(key);
-    } else {
-      throw new TypeError('key should be object or string');
-    }
-
-    return this;
-  };
-
-  /**
-   * Get or set value.
-   *
-   * @todo How about nodeValue, option, select
-   * @param {undefined|*} value
-   * @returns {*|jQuick}
-   */
-  $pt.val = function(value) {
-    var element = this.element;
-    if (element.nodeName === 'select') {}//todo
-    if (value === undefined) {
-      return element && element.value;// || element.nodeValue;
-    } else if (element) {
-      element.value = value;
-    }
-    return this;
-  };
-
-  var FIX_CSS = $.FIX.CSS;// { 'float': 'cssFloat' };
-  /**
-   * Get or set style. Maybe computed.
-   *
-   * @param {Object|string} key
-   * @returns {jQuick|*}
-   */
-  $pt.css = function(key) {
-    var element = this.element, type = typeof key, value,
-      style = $.isElement(element) ? element.style : null;
-
-    if (!style) { return type === 'object' ? this : null; }//throw new Error( 'there is no style! ' ); }
-
-    if (type === 'object') {
-      var options = key;
-      for (key in options) {
-        if (options.hasOwnProperty(key)) {
-          value = options[key];
-          key = FIX_CSS[key] || $.toCamelCase(key);
-          if (value === '' || value === null) {
-            style.removeProperty(key);
-          } else {
-            style[key] = value;
-          }
-        }
-      }
-    } else if (type === 'string') {
-      key = FIX_CSS[key] || $.toCamelCase(key);
-      return style[key] || window.getComputedStyle(element)[key];
-    }  else {
-      throw new TypeError( 'key should be object or string' );
-    }
-
-    return this;
-  };
-
-  $pt.focus = function() {//@todo
-    var element = this.element;
-    if ($.isElement(element) || $.isWindow(element)) {
-      element.focus();
-    }
-    return this;
-  };
+//  $pt.replaceWith = function(node) {
+//    var element = this.element,
+//      parent = element ? element.parentNode : null;
+//    if (parent) {
+//      (new $(parent)).replace(node, element);
+//    }
+//    /*var parent = element ? element.parentNode : null;
+//     if ( parent ) {
+//     if ( typeof node === 'string' ) {
+//     node = $.parse( node )[0];
+//     }
+//     parent.replaceChild( element, $.extract( node ) );
+//     }*/
+//    return this;
+//  };
 
 })(window);
 
@@ -1566,7 +1395,7 @@
       instance._actions = actions;
 
       if (!('listener' in action)) {
-        if (element && ('on' + type) in element) {//@todo No problem?
+        if (this.can(type)) {//@todo No problem?
           action.listener = function(domEvent) {
             instance.trigger(domEvent);
           };

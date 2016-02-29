@@ -5,12 +5,11 @@
   'use strict';
 
   /**
-   * A JavaScript library with limited and quick DOM APIs for modern browsers.
-   * Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
-   *
-   * @todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
+   * @overview jQuick - A JavaScript library with limited and quick DOM APIs for modern browsers.
+   *           Its APIs are similar to jQuery, but one instance of jQuick only manages one element.
    *
    * @copyright Copyright 2016 Enjolras. All rights reserved.
+   * @license   Licensed under MIT license
    * @version 0.0.1
    * 
    * @class
@@ -22,7 +21,7 @@
     if (this === undefined ||  this === window) {// <=> !(this instanceof jQuick)
       return $.select( element, options );
     }
-
+    //@todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
     this.element = null; //@todo How about this.node
     //this._events = {};
     this.length = 0;
@@ -34,7 +33,7 @@
       if (expr[0] === '<'
         && expr[expr.length - 1] === '>'
         && expr.length >= 3) {
-        element = $.parse(expr).item(0);
+        element = $.parse(expr)[0];
       } else {
         element = $doc.query(expr);
       }
@@ -106,7 +105,7 @@
    *
    * @static
    * @param {string} html
-   * @returns {NodeList}
+   * @returns {Array}
    */
   $.parse = function(html) {
     var idx = html.indexOf(' '), name = html.slice(1, idx);
@@ -114,8 +113,15 @@
     if (!(name in containers)) { name = '*'; }
     var container = containers[name];
     container.innerHTML = html;
+
+    var children = [], nodes = container.childNodes, n = nodes.length, i;
+    
+    for (i = 0; i < n; ++i) {
+      children.push(nodes[i]);
+    }
+    //container.textContent ='';
     //return container.firstChild;
-    return container.childNodes;
+    return children;
   };
 
   /**
@@ -553,9 +559,8 @@
     innerHTML: function(buffer, value) {
       if (typeof value === 'string') {
         var child, children = buffer.pool.children = [], nodes = $.parse(value);
-        console.log(nodes);
         for (var i = 0, n = nodes.length; i < n; ++i) {
-          child = nodes.item(i);
+          child = nodes[i];
           child.futureParent = buffer.element;
           children.push(child);
         }
@@ -625,13 +630,26 @@
      * @returns {self}
      */
     update: function(type, key, value) {
-      if ( key in ContentUtil &&  type === 'props' ) {
-        var render = ContentUtil[key];
-        render(this, value);
+      var t = typeof key;
+      if (t === 'string') {
+        if ( key in ContentUtil &&  type === 'props' ) {
+          var render = ContentUtil[key];
+          render(this, value);
+        } else {
+          var part = this.pool[type];
+          part[key] = value;
+        }
+      } else if (t === 'object') {
+        var options = key;
+        for (key in options) {
+          if (options.hasOwnProperty(key)) {
+            this.update(type, key, options[key]);
+          }
+        }
       } else {
-        var part = this.pool[type];
-        part[key] = value;
+        throw new TypeError('key should be string or object');
       }
+
 
       return this;
     },
