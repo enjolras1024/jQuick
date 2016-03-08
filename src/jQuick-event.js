@@ -15,6 +15,22 @@
   //############################################################
 
   var ActionUtil = {
+    parse: function(type) {
+      var namespace, event, i;
+      // TODO: Fix event of type.
+      if (typeof type === 'string') {
+        i = type.indexOf('.');
+        if (i > 0) {
+          namespace = type.slice(i + 1);
+          type = type.slice(0, i);
+        }
+        event = { type: type, target: null, namespace: namespace };
+      } else if ('type' in type) {
+        event = type;
+      }
+
+      return event;
+    },
     /**
      * Add DOM event or custom event listener.
      *
@@ -69,7 +85,7 @@
       instance._actions = actions;
 
       if (!('listener' in action)) {
-        if (this.can(type)) {//@todo No problem?
+        if (instance.can(type)) {//@todo No problem?
           action.listener = function(domEvent) {
             instance.trigger(domEvent);
           };
@@ -147,6 +163,41 @@
       }
 
       return true;
+    },
+
+    dispatch: function(instance, method, type) {
+      var actions = instance._actions, paras, handlers, handler,
+        context, func, i, n, event, namespace;
+
+      if (!actions) { return; }
+
+      event = ActionUtil.parse(type);
+      type = event.type;
+      namespace = event.namespace;
+
+      if (!(type in actions)) { return; }
+
+      event.dispatcher = instance;
+
+      if (method === 'emit') {
+        paras = [].slice.call(arguments, 3);
+      } else if (!('data' in event)) {
+        event.data = arguments[3];
+        paras = [event];
+      }
+
+      handlers = actions[type].handlers;
+      n = handlers.length;
+
+      // Fire handlers in namespace.
+      for (i = 0; i < n; ++i) {
+        handler = handlers[i];// handlers[ i ]( event.clone() );
+        if (!namespace || namespace === handler.namespace) {
+          context = handler.context;
+          func = handler.func;
+          func.apply(context, paras);
+        }
+      }
     },
 
     clear: function(instance) {
@@ -236,54 +287,25 @@
   /**
    * Dispatch custom event with data.
    *
-   * @alias emit()
    * @param {Event|Object|string} type
    * @param {*} data
    * @returns {self}
    */
   $pt.trigger = function(type, data) {
-    var actions = this._actions, handlers, handler, context, func, i, n, event, namespace;
+    ActionUtil.dispatch.apply(ActionUtil, [this, 'trigger', type, data]);
 
-    if (!actions) { return this; }
+    return this;
+  };
 
-    // TODO: Fix event of type.
-    if (typeof type === 'string') {
-      i = type.indexOf('.');
-      if (i > 0) {
-        namespace = type.slice(i + 1);
-        type = type.slice(0, i);
-      }
-      event = { type: type, target: null };
-    } else if ('type' in type) {
-      event = type;
-      type = event.type;
-      namespace = event.namespace;
-    }
-
-    if (!(type in actions)) { return this; }
-
-    event.trigger = this;
-    if (!('data' in event)) {
-      event.data = data;
-    }
-
-    handlers = actions[type].handlers;
-    n = handlers.length;
-
-    // Fire handlers in namespace.
-    for (i = 0; i < n; ++i) {
-      handler = handlers[i];// handlers[ i ]( event.clone() );
-      if (!namespace || namespace === handler.namespace) {
-        context = handler.context;
-        func = handler.func;
-        if (context) {
-          func.call(context, event);
-        } else {
-          func(event);
-        }
-
-      }
-    }
+  /**
+   * Dispatch custom event, handlers accept rest arguments.
+   *
+   * @param {Event|Object|string} type
+   * @returns {self}
+   */
+  $pt.emit = function(type/*, ..rest*/) {
+    var rest = [].slice.call(arguments, 1);
+    ActionUtil.dispatch.apply(ActionUtil, [this, 'emit', type].concat(rest));
 
     return this;
   };

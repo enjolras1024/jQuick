@@ -10,19 +10,19 @@
    *
    * @copyright Copyright 2016 Enjolras. All rights reserved.
    * @license   Licensed under MIT license
-   * @version 0.0.1
+   * @version   0.0.1
    * 
    * @class
    * @constructor
-   * @param {Element|string} element
+   * @param {Element|Window|Document|string} element
    * @param {Object} options
    */
   var $ = function jQuick(element, options) {
-    if (this === undefined ||  this === window) {// <=> !(this instanceof jQuick)
+    if (!(this instanceof jQuick)) {
       return $.select( element, options );
     }
     //@todo How about two instances of jQuick manage one element? Maybe terrible. Only $.select can create new instance.
-    this.element = null; //@todo How about this.node
+    this.element = null;
     //this._events = {};
     this.length = 0;
 
@@ -283,9 +283,26 @@
     return !!this.element;
   };
 
+
+  $pt.focus = function() {//@todo
+    var element = this.element;
+    if ($.isElement(element) || $.isWindow(element)) {
+      element.focus();
+    }
+    return this;
+  };
+
   //############################################################
   // DOM event
   //############################################################
+
+  /**
+   * Just add DOM event listener.
+   *
+   * @param {string} type
+   * @param {Function} func
+   * @returns {self}
+   */
   $pt.on = function(type, func) {
     var element = this.element;
     if (this.can(type)) {
@@ -294,6 +311,13 @@
     return this;
   };
 
+  /**
+   * Just remove DOM event listener.
+   *
+   * @param {string} type
+   * @param {Function} func
+   * @returns {self}
+   */
   $pt.off = function(type, func) {
     var element = this.element;
     if (this.can(type)) {
@@ -302,6 +326,12 @@
     return this;
   };
 
+  /**
+   * Check if this element can on event of given type.
+   *
+   * @param {string} type
+   * @returns {boolean}
+   */
   $pt.can = function(type) {
     return this.element && ('on' + type) in this.element;
   };

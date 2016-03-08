@@ -182,6 +182,7 @@
     /**
      * Add class asynchronously.
      *
+     * @alias add
      * @param {string} name
      * @returns {self}
      */
@@ -195,6 +196,7 @@
     /**
      * Remove class asynchronously.
      *
+     * @alias cut
      * @param {string} name
      * @returns {self}
      */

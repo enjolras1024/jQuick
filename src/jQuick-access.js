@@ -158,12 +158,4 @@
     return this;
   };
 
-  $pt.focus = function() {//@todo
-    var element = this.element;
-    if ($.isElement(element) || $.isWindow(element)) {
-      element.focus();
-    }
-    return this;
-  };
-
 })(window);
