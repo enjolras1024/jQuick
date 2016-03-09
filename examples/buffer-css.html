@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style type="text/css">
+        #box {
+            padding: 20px;
+            color: #fff;
+            background-color: #222;
+            border-left-style: solid;
+            border-left-width: 10px;
+            border-left-color: #444;
+        }
+
+        #result {
+            padding: 10px;
+            background-color: yellow;
+        }
+
+        code {
+
+            font: 15px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            line-height: 1.8em;
+        }
+
+        button {
+            margin: 10px;
+            padding: 3px 10px;
+            color: #fff;
+            background-color: #0af;
+            border-style: solid;
+            border-width: 1px;
+            font-size: 1.2em;
+        }
+
+        button:hover {
+            cursor: pointer;
+        }
+
+        button:active {
+            background-color: #09e;
+        }
+
+        .keyword {
+            color: #0ad;
+        }
+        .comment {
+            color: #888;
+        }
+        .method {
+            color: #f0a;
+        }
+        .prop {
+            color: #06f;
+        }
+        .func {
+            color: #0f0;
+        }
+        .str {
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <div id="box">
+        <code>
+            <span class="keyword">var</span> $div = <span class="func">jQuick</span>.<span class="method">select</span>(<span class="str">'div#result'</span>); <br>
+            <br>
+            $div.<span class="prop">buffer</span>.<span class="method">css</span>({<span class="prop">'background-color'</span>: <span class="str">'green'</span>}); <br>
+            $div.<span class="prop">buffer</span>.<span class="method">text</span>(<span class="str">'It was '</span> + $div.<span class="method">css</span>(<span class="str">'background-color'</span>) + <span class="str">'. Now it is '</span>); <br>
+            $div.<span class="prop">buffer</span>.<span class="method">insert</span>(<span class="func">jQuick</span>.<span class="method">select</span>(<span class="str">'&lt;strong&gt;green.&lt;/strong&gt;'</span>).<span class="prop">element</span>); <br>
+            <br>
+            $div.<span class="method">text</span>(<span class="str">'It was yellow. Now it is red.'</span>); <br>
+            $div.<span class="method">css</span>({<span class="prop">'background-color'</span>: <span class="str">'red'</span>, <span class="prop">color</span>: <span class="str">'#fff'</span>}); <br>
+            <span class="comment">//$div.css('background-color', 'red') won't work.</span>
+        </code>
+    </div>
+    <button>Run</button>
+    <div id="result">It is yellow.</div>
+    <!--<script type="text/javascript" src="dist/jQuick-full.js"></script>-->
+    <script type="text/javascript" src="../src/jQuick.js"></script>
+    <script type="text/javascript" src="../src/jQuick-finder.js"></script>
+    <script type="text/javascript" src="../src/jQuick-access.js"></script>
+    <script type="text/javascript" src="../src/jQuick-buffer.js"></script>
+    <script type="text/javascript" src="../src/jQuick-content.js"></script>
+    <!--<script type="text/javascript" src="src/jQuick-event.js"></script>-->
+    <script type="text/javascript">
+        jQuick.select('button').on('click', function() {
+            var $div = jQuick.select('div#result');
+
+            $div.buffer.css({'background-color': 'green'});
+            $div.buffer.text('It was ' + $div.css('background-color') + '. Now it is ');
+            $div.buffer.insert(jQuick.select('<strong>green.</strong>').element);
+
+
+            $div.text('It was yellow. Now it is red.');
+            //$div.css('background-color', 'red');
+            $div.css({'background-color': 'red', color: '#fff'});
+        });
+    </script>
+</body>
+</html>

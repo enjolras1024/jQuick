@@ -15,6 +15,13 @@
   var FIX_HTML = $.FIX.HTML,//{'for': 'htmlFor', 'class': 'className'},
       FIX_CSS = $.FIX.CSS;//{ 'float': 'cssFloat' };
 
+
+  var nextTick = window.requestAnimationFrame
+          || window.webkitRequestAnimationFrame
+          || window.mozRequestAnimationFrame
+          || window.oRequestAnimationFrame
+          || window.msRequestAnimationFrame;
+
   //############################################################
   // buffer module - Update asynchronously
   //############################################################
@@ -83,7 +90,7 @@
         buffers[bufferIndex].push(this);
         if (!flag) {
           flag = true;
-          requestAnimationFrame(tick/*, document.body*/);
+          nextTick(tick/*, document.body*/);
         }
       }
       return this._pool;

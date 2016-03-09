@@ -287,6 +287,7 @@
   /**
    * Dispatch custom event with data.
    *
+   * @example .emit('ok', data) may trigger function(event){ event.data;...}
    * @param {Event|Object|string} type
    * @param {*} data
    * @returns {self}
@@ -300,6 +301,7 @@
   /**
    * Dispatch custom event, handlers accept rest arguments.
    *
+   * @example .emit('ok', a, b) may trigger function(a, b){...}
    * @param {Event|Object|string} type
    * @returns {self}
    */
