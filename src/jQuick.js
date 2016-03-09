@@ -244,6 +244,18 @@
   };
 
   /**
+   * Fire func on each item.
+   *
+   * @param {Array} items
+   * @param {Function} func
+   */
+  $.each = function(items, func) {
+    for (var i = 0, n = items.length; i < n; ++i) {
+      func(items[i], i, items);
+    }
+  };
+
+  /**
    * Select or create an element and return an new jQuick instance.
    *
    * @static
@@ -283,6 +295,15 @@
     return !!this.element;
   };
 
+  /**
+   * Clone this instance.
+   *
+   * @returns {self}
+   */
+  $pt.clone = function() {
+    var element = this.element;
+    return (element instanceof Node) ? new $(element.cloneNode(true)) : new $();
+  };
 
   $pt.focus = function() {//@todo
     var element = this.element;
